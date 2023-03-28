@@ -16,12 +16,12 @@ export const run = async () => {
         openAIApiKey: process.env.OPENAI_API_KEY,
     });
     const chain = ConversationalRetrievalQAChain.fromLLM(model, vectorStore.asRetriever());
-    const question = "What are some examples of the Command pattern implemented in Dart instead of C++?";
+    const question = "What are some of the problems the command pattern is most apt to solve?";
     const response = await chain.call({question, chat_history: []});
     console.log(response);
     const chatHistory = question + response.text;
     const followUpResponse = await chain.call({
-        question: "What about those specific examples in Rust instead?",
+        question: "What benefits does the Command pattern provide?",
         chat_history: chatHistory,
     });
     console.log(followUpResponse);
