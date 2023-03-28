@@ -3,7 +3,7 @@ import { OpenAIEmbeddings } from "langchain/embeddings";
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { OpenAI } from "langchain";
-import { ConversationalRetrievalQAChain } from "langchain/dist/chains";
+import { ConversationalRetrievalQAChain } from "langchain/chains";
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const docsPath = path.resolve(currentDir, '../data/docs');
