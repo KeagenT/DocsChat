@@ -2,7 +2,8 @@
 node_modules
 /build
 /.svelte-kit
-/src/data
+/src/data/docs/*
+/src/data/text/*
 /package
 .env
 .env.*

@@ -11,6 +11,9 @@ import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemp
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const docsPath = path.resolve(currentDir, '../data/docs/gameDesignBook');
+
+// Default GPT model to use and OpenAI API key
+// This can be more configurable by loading from a .env file instead of your .bashrc etc file
 const DEFAULT_MODEL = {
     model: "gpt-3.5-turbo",
     openAIApiKey: process.env.OPENAI_API_KEY,
