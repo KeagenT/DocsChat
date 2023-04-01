@@ -9,9 +9,6 @@ import { ChainTool } from "langchain/tools";
 import { initializeAgentExecutor } from "langchain/agents";
 import { ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate } from "langchain/prompts";
 
-const currentDir = path.dirname(fileURLToPath(import.meta.url));
-const docsPath = path.resolve(currentDir, '../data/docs/gameDesignBook');
-
 // Default GPT model to use and OpenAI API key
 // This can be more configurable by loading from a .env file instead of your .bashrc etc file
 const DEFAULT_MODEL = {
@@ -19,22 +16,38 @@ const DEFAULT_MODEL = {
     openAIApiKey: process.env.OPENAI_API_KEY,
 };
 
+const currentDir = path.dirname(fileURLToPath(import.meta.url));
+const directoryPath = (directoryName) => path.resolve(currentDir, `../data/docs/${directoryName}`);
+directoryPath("gameDesignBook");
+
 const buildModel = () => {
     return new ChatOpenAI({
         ...DEFAULT_MODEL
     });
 }
 
+const buildRetrievalChain = async (directoryName) => { 
+    const vectorStore = await HNSWLib.load(directoryPath(directoryName), new OpenAIEmbeddings());
+    return RetrievalQAChain.fromLLM(buildModel(), vectorStore.asRetriever());
+}
+
 export const run = async () => {
-    const vectorStore = await HNSWLib.load(docsPath, new OpenAIEmbeddings());
-    const retrievalChain = RetrievalQAChain.fromLLM(buildModel(), vectorStore.asRetriever());
+    const bookChain = await buildRetrievalChain("gameDesignBook");
     const bookTool = new ChainTool({
         name: 'game-design-patterns-tool',
         description: 'Game Design Patterns Book QA - used to ask questions about the book Game Design Patterns by Robert Nystrom',
-        chain: retrievalChain,
+        chain: bookChain,
     });
+    const dartDocsChain = await buildRetrievalChain("dartDocs");
+
+    const dartDocsTool = new ChainTool({
+        name: 'dart-docs-tool',
+        description: 'Dart Docs QA - used to ask questions about the Dart programming language by directly searching the Dart documentation',
+        chain: dartDocsChain,
+    });
+
     const humanTemplate = "The explanation to convert is as follows: {explanation}";
-    const systemCodingTemplate = "You are a Senior Software Engineer who specializes in Dart. You are able to convert explanations of algorithms or design patterns into Dart code examples.";
+    const systemCodingTemplate = "You are a Senior Software Engineer who specializes in Dart. You are able to convert explanations of algorithms, design patterns, or snippets from another language, into Dart code examples.";
     const codingPrompt = ChatPromptTemplate.fromPromptMessages([
         SystemMessagePromptTemplate.fromTemplate(systemCodingTemplate),
         HumanMessagePromptTemplate.fromTemplate(humanTemplate),
@@ -47,10 +60,12 @@ export const run = async () => {
     });
 
     
-    const bookExecutor = await initializeAgentExecutor([bookTool, codingTool], buildModel(), "chat-zero-shot-react-description");
-    const input = "How do I conceptually implement the observer pattern based on the game design patterns book? After explaining the concept, please generate a Dart Code example of the pattern in addition to the conceptual explanation.";
+    const bookExecutor = await initializeAgentExecutor([bookTool, codingTool, dartDocsTool], buildModel(), "chat-zero-shot-react-description");
+    const input = "Please show me how to implement the state pattern with code examples and explain the state pattern in the context of video games conceptually.";
     const result = await bookExecutor.call({input}); 
-    console.log(`${JSON.stringify(result, null, 2)}`);
+    const JSONString = JSON.stringify(result, null, 2);
+    fs.writeFileSync('output.json', JSONString, 'utf8');
+    console.log(JSONString);
 
 };
 

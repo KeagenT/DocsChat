@@ -8,7 +8,8 @@
 		"preview": "vite preview",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
 		"format": "prettier --plugin-search-dir . --write .",
-		"ingest": "node src/utils/ingestFile.js"
+		"ingest": "node src/utils/ingestFile.js",
+		"query": "node src/utils/queryFile.js"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^2.0.0",
