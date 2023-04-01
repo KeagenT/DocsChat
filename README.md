@@ -41,7 +41,7 @@ and `<output-directory-name>` is the name of the directory you want to save the 
 This only needs to be done once per file, and the embedding will be saved in the data/docs directory for future use.
 
 #### **Important Disclaimer**
-*Ingesting a file uses OpenAI's embedding API, and as such, will cost you literal actual money, likely more than you'd expect from regular conversational usage of a model. e.g. embedding an entire book to test this on cost me roughly $0.40*
+*Ingesting a file uses OpenAI's embedding API, and as such, will cost you literal actual money. Using other models besides GPT-3.5.turbo will also rack up non-negligible costs.*
 
 The queryFile.js file is a hard coded example of how to use langchainJS 
 to ask questions about your embedded text file. Modify the prompts as you see fit,
