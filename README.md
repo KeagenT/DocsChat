@@ -26,7 +26,7 @@ This project *requires* an OpenAI API key to run.
 [You can find API Key information here](https://platform.openai.com/docs/api-reference).
 In this particular hardcoded environment,
 I'm referencing the API key from my own .bashrc file inside queryFile.js,
-and as such this assumed your terminal has an exported OPENAI_API_KEY variable.
+and as such this assumes your terminal has an exported OPENAI_API_KEY variable.
 
 Currently, this project's whole functionality is limited to the src/utils/ingestFile.js file,
 and src/utils/queryFile.js files. the ingestFile.js file is used to convert a text file into an
