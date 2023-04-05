@@ -36,51 +36,57 @@ const buildRetrievalChain = async (directoryName) => {
 }
 
 export const run = async () => {
-    const bookChain = await buildRetrievalChain("gameDesignBook");
-    const bookTool = new ChainTool({
-        name: 'game-design-patterns-tool',
-        description: 'Game Design Patterns Book QA - Book Used to ask questions about coding design patterns in the context of video games',
-        chain: bookChain,
-    });
-    const dartDocsChain = await buildRetrievalChain("dartDocs");
+    // const bookChain = await buildRetrievalChain("gameDesignBook");
+    // const dartDocsChain = await buildRetrievalChain("dartDocs");
 
-    const dartDocsTool = new ChainTool({
-        name: 'dart-docs-tool',
-        description: 'Dart Docs QA - used to ask questions about the Dart programming language by directly searching the Dart documentation',
-        chain: dartDocsChain,
-    });
-
-    const humanTemplate = "The explanation to convert is as follows: {explanation}";
-    const systemCodingTemplate = "You are a Senior Software Engineer who specializes in Dart. You are able to convert explanations of algorithms, design patterns, or snippets from another language, into Dart code examples. You also receive JSON string signifying chat action history, this is largely irrelevant to fulfilling your purpose.";
-    const codingPrompt = ChatPromptTemplate.fromPromptMessages([
-        SystemMessagePromptTemplate.fromTemplate(systemCodingTemplate),
-        HumanMessagePromptTemplate.fromTemplate(humanTemplate),
-      ]);
-    const codingChain = new LLMChain({ llm: buildModel(), prompt: codingPrompt });
-    const codingTool = new ChainTool({
-        name: 'coding-tool',
-        description: 'Coding Tool - used to generate code examples from explanations obtained from books or other sources',
-        chain: codingChain,
-    });
-
-    CallbackManager
-    const callbackManager = CallbackManager.fromHandlers({
-        async handleAgentAction(action) {
-          console.log("handleAgentAction", action);
-        },
-      });
-
-    const bookExecutor = await initializeAgentExecutor([bookTool, codingTool, dartDocsTool], buildModel(), "chat-zero-shot-react-description", callbackManager);
-    const input = "Please show me how to implement the state pattern with code examples and explain the state pattern in the context of video games conceptually. The presence of a code sample in the final output summary from intermediate steps is extremely important.";
-    const result = await bookExecutor.call({input}); 
-    const JSONResult = JSON.stringify(result, null, 2);
-    console.log(JSONResult);
-    await fs.promises.writeFile(outputPath("output.txt"), JSONResult);
+    const targetLanguage = "dart";
+    const targetContext = "Video Game";
+    const bookQuestion = "What is the State Design Pattern?";
+    const summaryResult = await getExplanationWithCodeSnippet(bookQuestion, targetLanguage, targetContext);
+    console.log(summaryResult.text);
+    await fs.promises.writeFile(outputPath("output.txt"), summaryResult.text);
 
     
 
     
 
 };
+
+async function callBookChain(question) {
+    const bookChain = await buildRetrievalChain("gameDesignBook");
+    const result = await bookChain.call({ query: question });
+    return result;
+}
+
+async function callCodeChain(userExplanation, inputLanguage, inputContext) {
+    const humanTemplate = "The explanation or snippet to convert is as follows: {explanation}.  You output ONLY markdown blocks of commented {language} code e.g. ```dart\nExample Code Goes here```. Remember to contextualize the example in the style of {context} development.";
+    const systemCodingTemplate = "You are a Senior Software Engineer who specializes in {language}. You are able to convert explanations of algorithms, design patterns, or snippets from another language, into {language} code examples. You always try to contextualize code examples with usage in the style of {context} development for maximum understanding.";
+    const codingPrompt = ChatPromptTemplate.fromPromptMessages([
+        SystemMessagePromptTemplate.fromTemplate(systemCodingTemplate),
+        HumanMessagePromptTemplate.fromTemplate(humanTemplate),
+      ]);
+    const codingChain = new LLMChain({ llm: buildModel(), prompt: codingPrompt });
+    const result = await codingChain.call({ explanation: userExplanation, language: inputLanguage, context: inputContext });
+    return result;
+}
+
+async function codeSummaryChain(userInputCode, userInputExplanation) {
+    const systemSummaryTemplate = "You are a helpful Assistant, who reformats input code snippets and explanations related to code snippets. You are to take both a markdown code snippet, and a user explanation, summarize the explanation and append it to the bottom of the codeblock in the following format: ```User Code Snippet Here```\n Summarized Explanation Here";
+    const humanSummaryTemplate = "The code snippet is as follows: {code}. The explanation is as follows: {explanation}. Make sure the summarized explanation and original code snippet follow this formatting: ```User Code Snippet Here```\n Summarized Explanation Here";
+    const summaryPrompt = ChatPromptTemplate.fromPromptMessages([
+        SystemMessagePromptTemplate.fromTemplate(systemSummaryTemplate),
+        HumanMessagePromptTemplate.fromTemplate(humanSummaryTemplate),
+    ]);
+    const summaryChain = new LLMChain({ llm: buildModel(), prompt: summaryPrompt });
+    const result = await summaryChain.call({ code: userInputCode, explanation: userInputExplanation });
+    return result;
+};
+
+async function getExplanationWithCodeSnippet(question, targetLanguage, targetCodeContext) {
+    const bookResult = await callBookChain(question);
+    const codeResult = await callCodeChain(bookResult.text, targetLanguage, targetCodeContext);
+    const summaryResult = await codeSummaryChain(codeResult.text, bookResult.text);
+    return summaryResult;
+}
 
 run();
