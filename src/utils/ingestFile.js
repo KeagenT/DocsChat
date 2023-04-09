@@ -33,10 +33,10 @@ export const parseText = async (text, docsPath) => {
 // e.g. {pages: [{url: "https://www.google.com", content: "This is the content of the page"}, ...]]}
 // Want to see if this can be used to add sources to retrieval chains with the sources being the URL
 const parseJSON = async (text, docsPath) => {
-	const input = JSON.parse(text);
+	const input = await JSON.parse(text);
 	const pages = input.pages;
 	const content = [...pages.map(page => page.content)];
-	const metadata = [...pages.map(page => {url: page.url})]
+	const metadata =  [...pages.map(page => ({url: page.url}))]
 	const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 250, chunkOverlap: 50 });
 	const docs = await splitter.createDocuments(content, metadata);
 	const vectorStore = await HNSWLib.fromDocuments(docs, new OpenAIEmbeddings());
@@ -66,4 +66,5 @@ if (filename && directoryOutput && inputType) {
   console.log(
     'Please provide a filename, output directory, and input type e.g. \n npm run ingest <filename> <output directory> --input-type <input type>'
   );
+  console.log(options);
 }
