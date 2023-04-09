@@ -10,7 +10,6 @@ import {
 	HumanMessagePromptTemplate,
 	SystemMessagePromptTemplate
 } from 'langchain/prompts';
-import { CallbackManager } from 'langchain/callbacks';
 
 // Default GPT model to use and OpenAI API key
 // This can be more configurable by loading from a .env file instead of your .bashrc etc file
