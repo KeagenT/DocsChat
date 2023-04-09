@@ -5,8 +5,6 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 import { LLMChain, RetrievalQAChain } from 'langchain/chains';
 import { ChatOpenAI } from 'langchain/chat_models';
-import { ChainTool } from 'langchain/tools';
-import { initializeAgentExecutor } from 'langchain/agents';
 import {
 	ChatPromptTemplate,
 	HumanMessagePromptTemplate,
@@ -24,9 +22,7 @@ const DEFAULT_MODEL = {
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const directoryPath = (directoryName) => path.resolve(currentDir, `../data/docs/${directoryName}`);
 const outputPath = (fileName) => path.resolve(currentDir, `${fileName}`);
-directoryPath('gameDesignBook');
 
-const replaceNewLines = (str) => str.replace(/\\n/g, '\n');
 
 const buildModel = () => {
 	return new ChatOpenAI({
@@ -41,16 +37,17 @@ const buildRetrievalChain = async (directoryName) => {
 
 export const run = async () => {
 	// const bookChain = await buildRetrievalChain("gameDesignBook");
-	// const dartDocsChain = await buildRetrievalChain("dartDocs");
+	const dartDocsChain = await buildRetrievalChain("dartDocs");
 
 	const targetLanguage = 'dart';
 	const targetContext = 'Video Game';
 	const bookQuestion = 'What is the State Design Pattern?';
-	const summaryResult = await getExplanationWithCodeSnippet(
-		bookQuestion,
-		targetLanguage,
-		targetContext
-	);
+	// const summaryResult = await getExplanationWithCodeSnippet(
+	// 	bookQuestion,
+	// 	targetLanguage,
+	// 	targetContext
+	// );
+    const summaryResult = await dartDocsChain.call({ query: "How do I make a variable in Dart?" });
 	console.log(summaryResult.text);
 	await fs.promises.writeFile(outputPath('output.txt'), summaryResult.text);
 };
