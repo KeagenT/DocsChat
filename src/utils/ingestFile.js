@@ -64,7 +64,7 @@ if (filename && directoryOutput && inputType) {
   run(filename, directoryOutput, inputType);
 } else {
   console.log(
-    'Please provide a filename, output directory, and input type e.g. \n npm run ingest <filename> <output directory> --input-type <input type>'
+    'Please provide a filename, output directory, and input type e.g. \n npm run ingest <filename> <output directory> -- --input-type <input type>'
   );
   console.log(options);
 }
