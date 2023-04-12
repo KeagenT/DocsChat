@@ -31,7 +31,7 @@ export const parseText = async (text, docsPath) => {
 
 // arbitrary JSON format for web pages I've scraped
 // e.g. {pages: [{url: "https://www.google.com", content: "This is the content of the page"}, ...]]}
-// Want to see if this can be used to add sources to retrieval chains with the sources being the URL
+// Want to see if this can be used to add sources to retrieval chains with the sources being the MetaData URL
 const parseJSON = async (text, docsPath) => {
 	const input = await JSON.parse(text);
 	const pages = input.pages;

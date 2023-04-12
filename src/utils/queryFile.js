@@ -25,30 +25,39 @@ const outputPath = (fileName) => path.resolve(currentDir, `${fileName}`);
 
 const buildModel = () => {
 	return new ChatOpenAI({
+		temperature: 0,
 		...DEFAULT_MODEL
 	});
 };
 
 const buildRetrievalChain = async (directoryName) => {
 	const vectorStore = await HNSWLib.load(directoryPath(directoryName), new OpenAIEmbeddings());
-	return RetrievalQAChain.fromLLM(buildModel(), vectorStore.asRetriever());
+	return RetrievalQAChain.fromLLM(buildModel(), vectorStore.asRetriever(6), {returnSourceDocuments: true});
 };
 
 export const run = async () => {
 	// const bookChain = await buildRetrievalChain("gameDesignBook");
-	const dartDocsChain = await buildRetrievalChain("dartDocs");
+	// const dartDocsChain = await buildRetrievalChain("dartDocs");
 
-	const targetLanguage = 'dart';
-	const targetContext = 'Video Game';
-	const bookQuestion = 'What is the State Design Pattern?';
+	const svelteKitDocsChain = await buildRetrievalChain("svelteKitLarge");
+
+	// const targetLanguage = 'dart';
+	// const targetContext = 'Video Game';
+	// const bookQuestion = 'What is the State Design Pattern?';
 	// const summaryResult = await getExplanationWithCodeSnippet(
 	// 	bookQuestion,
 	// 	targetLanguage,
 	// 	targetContext
 	// );
-    const summaryResult = await dartDocsChain.call({ query: "How do I make a variable in Dart?" });
-	console.log(summaryResult.text);
-	await fs.promises.writeFile(outputPath('output.txt'), summaryResult.text);
+	const question = 'How do I submit data with a form?';
+	// const response = await svelteKitDocsChain.retriever.getRelevantDocuments(question);
+	const response = await svelteKitDocsChain.call({query: question});
+    // const summaryResult = await svelteKitDocsChain.call({ query: "What's the difference between a +page.server.js file and a +page.js file?" });
+	// console.log(summaryResult.text);
+	// await fs.promises.writeFile(outputPath('output.txt'), summaryResult.text);
+	console.log(response);
+	console.log(svelteKitDocsChain.inputKey);
+	console.log(svelteKitDocsChain.outputKey)
 };
 
 async function callBookChain(question) {
