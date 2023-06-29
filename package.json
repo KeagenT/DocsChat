@@ -24,6 +24,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"ai": "^2.1.7",
 		"hnswlib-node": "^1.4.2",
 		"langchain": "^0.0.49"
 	}

@@ -32,14 +32,17 @@ const buildModel = () => {
 
 const buildRetrievalChain = async (directoryName) => {
 	const vectorStore = await HNSWLib.load(directoryPath(directoryName), new OpenAIEmbeddings());
-	return RetrievalQAChain.fromLLM(buildModel(), vectorStore.asRetriever(6), {returnSourceDocuments: true});
+	return RetrievalQAChain.fromLLM(buildModel(), vectorStore.asRetriever(), {returnSourceDocuments: true});
 };
 
-export const run = async () => {
-	// const bookChain = await buildRetrievalChain("gameDesignBook");
-	// const dartDocsChain = await buildRetrievalChain("dartDocs");
+const retrieverFromDirectory = async (directoryName, results) => {
+	const vectorStore = await HNSWLib.load(directoryPath(directoryName), new OpenAIEmbeddings());
+	return vectorStore.asRetriever(results);
+}
 
-	const svelteKitDocsChain = await buildRetrievalChain("svelteKitLarge");
+export const run = async () => {
+	// const svelteKitDocsChain = await buildRetrievalChain("svelteKitDocs");
+	const svelteKitRetriever = await retrieverFromDirectory("svelteKitDocs", 10);
 
 	// const targetLanguage = 'dart';
 	// const targetContext = 'Video Game';
@@ -49,15 +52,15 @@ export const run = async () => {
 	// 	targetLanguage,
 	// 	targetContext
 	// );
-	const question = 'How do I submit data with a form?';
-	// const response = await svelteKitDocsChain.retriever.getRelevantDocuments(question);
-	const response = await svelteKitDocsChain.call({query: question});
-    // const summaryResult = await svelteKitDocsChain.call({ query: "What's the difference between a +page.server.js file and a +page.js file?" });
-	// console.log(summaryResult.text);
-	// await fs.promises.writeFile(outputPath('output.txt'), summaryResult.text);
-	console.log(response);
-	console.log(svelteKitDocsChain.inputKey);
-	console.log(svelteKitDocsChain.outputKey)
+	const query = 'How do I submit data with a form';
+	const question = `${query} in SveteKit?`;
+	const relevantDocs = await svelteKitRetriever.getRelevantDocuments(query);
+	const usefulResults = relevantDocs.filter((result) => helpsAnswerQuestionChain(result.pageContent, query));
+	const explanationResults = usefulResults.filter((result) => !isCodeSnippetChain(result.pageContent));
+	const codeResults = usefulResults.filter((result) => isCodeSnippetChain(result.pageContent));
+	console.log("Useful docs", usefulResults);
+	console.log("Explanation docs", explanationResults);
+	console.log("Code docs", codeResults);
 };
 
 async function callBookChain(question) {
@@ -82,6 +85,28 @@ async function callCodeChain(userExplanation, inputLanguage, inputContext) {
 		context: inputContext
 	});
 	return result;
+}
+
+async function isCodeSnippetChain(input) {
+	const criteria = 'Is the input a code snippet? e.g. `Print("Hello World")` and NOT "hello `world`\n"';
+	const result = await evaluateCriteraChain(input, criteria);
+	return result;
+}
+
+async function helpsAnswerQuestionChain(input, query) {
+	const criteria = `Does this input help answer the question "${query}"?`;
+	const result = await evaluateCriteraChain(input, criteria);
+	return result;
+}
+
+async function evaluateCriteraChain(input, criteria) {
+	const systemEvaluateTemplate = 'You are an NLP assistant who evaluates user input against a criteria question: {criteria} You are to return a boolean value of true or false. Respond ONLY with this value and no other explanantion you must be absolutely certain it is true, or absolutely certain it is false. e.g. user: "print(`hello world`)" assistant: "true", user: "hello world" assistant: "false"';
+	const humanEvaluateTemplate = 'The input is as follows: {input} {criteria} Make sure the response is only a boolean value of true or false.';
+	const evaluateCriteriaPrompt = ChatPromptTemplate.fromPromptMessages([ SystemMessagePromptTemplate.fromTemplate(systemEvaluateTemplate), HumanMessagePromptTemplate.fromTemplate(humanEvaluateTemplate)]);
+	const evaluateCriteriaChain = new LLMChain({ llm: buildModel(), prompt: evaluateCriteriaPrompt });
+	const result = await evaluateCriteriaChain.call({ input: input, criteria: criteria });
+	const resultBool = result.text.toLowerCase() === 'true' ? true : false;
+	return resultBool;
 }
 
 async function codeSummaryChain(userInputCode, userInputExplanation) {

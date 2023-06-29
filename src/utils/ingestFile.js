@@ -68,3 +68,4 @@ if (filename && directoryOutput && inputType) {
   );
   console.log(options);
 }
+
