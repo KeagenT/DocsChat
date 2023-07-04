@@ -19,12 +19,13 @@
 		"eslint-plugin-svelte3": "^4.0.0",
 		"prettier": "^2.8.0",
 		"prettier-plugin-svelte": "^2.8.1",
-		"svelte": "^3.54.0",
+		"svelte": "4.0.1",
 		"vite": "^4.2.0"
 	},
 	"type": "module",
 	"dependencies": {
+		"ai": "^2.1.13",
 		"hnswlib-node": "^1.4.2",
-		"langchain": "^0.0.42"
+		"langchain": "^0.0.101"
 	}
 }
