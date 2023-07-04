@@ -1,5 +1,5 @@
-import { HNSWLib } from 'langchain/vectorstores';
-import { OpenAIEmbeddings } from 'langchain/embeddings';
+import { HNSWLib } from 'langchain/vectorstores/hnswlib';
+import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -7,8 +7,8 @@ import { fileURLToPath } from 'url';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 
-export const run = async (fileName, outputDir, inputType) => {
-	const ingestedPath = path.resolve(currentDir, `../data/text/${fileName}`);
+export const run = async (folder, outputDir, inputType) => {
+	const ingestedPath = path.resolve(currentDir, `../data/text/${folder}/data.json`);
 	const docsPath = path.resolve(currentDir, `../data/docs/${outputDir}`);
 
 	const text = fs.readFileSync(ingestedPath, 'utf8');
@@ -36,7 +36,7 @@ const parseJSON = async (text, docsPath) => {
 	const input = await JSON.parse(text);
 	const pages = input.pages;
 	const content = [...pages.map(page => page.content)];
-	const metadata =  [...pages.map(page => ({url: page.url}))]
+	const metadata =  [...pages.map(page => ({url: page.url, key: page.key, title: page.title}))]
 	const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 250, chunkOverlap: 50 });
 	const docs = await splitter.createDocuments(content, metadata);
 	const vectorStore = await HNSWLib.fromDocuments(docs, new OpenAIEmbeddings());

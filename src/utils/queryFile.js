@@ -21,7 +21,7 @@ const DEFAULT_MODEL = {
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const directoryPath = (directoryName) => path.resolve(currentDir, `../data/docs/${directoryName}`);
 const outputPath = (fileName) => path.resolve(currentDir, `${fileName}`);
-
+const keyPath = (directoryName) => path.resolve(currentDir, `../data/text/${directoryName}/data.key.json`);
 
 const buildModel = () => {
 	return new ChatOpenAI({
@@ -41,11 +41,21 @@ const retrieverFromDirectory = async (directoryName, results) => {
 }
 
 export const run = async () => {
-	
-
-	
+	const query = "What's is the difference between a page.server.js and page.js file in SvelteKit?";
+	const retriever = await retrieverFromDirectory('SvelteKit', 5);
+	const results = await retriever.getRelevantDocuments(query);
+	const metadata = results.map(result => ({'key': result.metadata.key, 'url': result.metadata.url}));
+	const uniqueURLs = [...new Set(metadata.map(item => item.url))];
+	console.log(metadata);
+	console.log(...getContentFromKeys(metadata, 'SvelteKit'))
 };
 
+const getContentFromKeys = (keys, directory) => {
+	const keyFile = fs.readFileSync(keyPath(directory), 'utf8');
+	const keyData = JSON.parse(keyFile);
+
+	return keys.map(key => keyData[key.key]);
+}
 
 
 run();
